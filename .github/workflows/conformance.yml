@@ -41,10 +41,12 @@ jobs:
         with:
           sdk: ${{ matrix.sdk }}
       - run: dart pub get
-      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: dart format lib test
       - run: dart analyze --fatal-infos
       - run: dart test --reporter expanded
       - run: dart pub publish --dry-run
+      - name: Verify committed formatting
+        run: git diff --exit-code
 
   flutter-consumer:
     name: Flutter 3.27.4 consumer
