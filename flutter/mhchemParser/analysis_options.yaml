@@ -1,0 +1,8 @@
+analyzer:
+  exclude:
+    - test/fixtures/**
+
+linter:
+  rules:
+    - avoid_print
+    - prefer_single_quotes

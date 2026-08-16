@@ -1,0 +1,71 @@
+name: Conformance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  upstream-oracle:
+    name: Upstream source and JavaScript oracle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node tools/conformance/check-upstream.mjs
+      - run: node tools/conformance/extract-corpus.mjs --check
+      - run: node tools/conformance/verify-oracle.mjs
+      - run: node tools/conformance/check-runtime-boundary.mjs
+
+  dart:
+    name: Dart ${{ matrix.sdk }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk:
+          - '3.6.0'
+          - stable
+    defaults:
+      run:
+        working-directory: flutter/mhchemParser
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: dart analyze --fatal-infos
+      - run: dart test --reporter expanded
+      - run: dart pub publish --dry-run
+
+  flutter-consumer:
+    name: Flutter 3.27.4 consumer
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: tool/flutter_consumer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.4'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter test
+      - name: Verify dependency boundary
+        run: |
+          flutter pub deps --style=compact > /tmp/mhchem-flutter-deps.txt
+          if grep -Eiq 'webview|javascript|js_interop' /tmp/mhchem-flutter-deps.txt; then
+            cat /tmp/mhchem-flutter-deps.txt
+            exit 1
+          fi

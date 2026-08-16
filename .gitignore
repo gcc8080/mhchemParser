@@ -1,3 +1,12 @@
 .claude/*
 !.claude/skills/
 !.claude/skills/**
+
+# Dart and Flutter generated files
+**/.dart_tool/
+**/.packages
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+flutter/mhchemParser/pubspec.lock
+tool/flutter_consumer/pubspec.lock

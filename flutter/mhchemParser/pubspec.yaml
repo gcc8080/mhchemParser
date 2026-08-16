@@ -1,10 +1,12 @@
 name: mhchem_parser
 description: Parser for mhchem chemical equation notation. Converts \ce and \pu syntax to LaTeX.
-version: 4.2.2
+version: 0.1.0
 homepage: https://github.com/gcc8080/mhchemParser
+repository: https://github.com/gcc8080/mhchemParser
+issue_tracker: https://github.com/gcc8080/mhchemParser/issues
 
 environment:
-  sdk: '>=2.17.0 <3.0.0'
+  sdk: '>=3.6.0 <4.0.0'
 
 dev_dependencies:
   test: ^1.21.0

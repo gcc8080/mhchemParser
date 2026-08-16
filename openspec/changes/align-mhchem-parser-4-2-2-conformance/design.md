@@ -43,15 +43,15 @@ The stored expected output will remain the pinned upstream value, including whit
 
 Normalizing output for KaTeX was rejected because that would create a third dialect, destroy differential-test value, and couple the parser to `flutter_math_plus`. Renderer support for `\\mathchoice`, `\\smash`, lapping, custom arrows, and related constructs belongs to the separate `support-mhchem-4-2-2-output-contract` change.
 
-### Add a typed API without immediately removing the legacy entry point
+### Add a typed API without removing the legacy entry point during 0.x
 
-The public library will add `MhchemMode` with `tex`, `ce`, and `pu` values and a new typed conversion method. The existing `MhchemParser.toTex(String input, String type)` signature will validate its string, delegate to the typed path, and be marked deprecated for one pre-1.0 migration window. Invalid strings will throw `ArgumentError.value` with the allowed modes.
+The public library will add `MhchemMode` with `tex`, `ce`, and `pu` values and `MhchemParser.convert(String input, {required MhchemMode mode})` as the typed single-pass method. The existing `MhchemParser.toTex(String input, String type)` signature will validate its string, delegate to `convert`, and be marked deprecated. The wrapper remains available throughout `0.x` and can be removed only in `1.0.0` or later. Invalid strings throw `ArgumentError.value` with the allowed modes.
 
 Changing the existing method's second parameter directly to an enum was rejected because it would force all consumers to migrate at once even though a delegating wrapper is inexpensive. Retaining unchecked strings as the only API was rejected because invalid values currently fail through an internal null assertion.
 
 ### Keep one-pass conversion upstream-exact and make recursion opt-in
 
-The typed primary conversion method will perform exactly one upstream-equivalent pass. A separate `expandAllTex` helper will repeatedly run TeX-mode conversion, defaulting to 16 passes and accepting a caller-supplied positive limit. It will stop successfully when no recognized embedded `\\ce{` or `\\pu{` command remains. It will throw a public expansion error if the limit is reached or a pass makes no progress while recognized commands remain.
+The typed primary conversion method will perform exactly one upstream-equivalent pass. `MhchemParser.expandAllTex(String input, {int maxPasses = 16})` will repeatedly run TeX-mode conversion and accept only a caller-supplied positive limit. It will stop successfully when no recognized embedded `\\ce{` or `\\pu{` command remains. It throws `MhchemExpansionException` with a public reason value distinguishing `passLimit` from `noProgress`; the exception includes the configured limit and last complete intermediate value for diagnostics, but callers cannot mistake that value for a successful result.
 
 Implicitly recursing in the main conversion method was rejected because several canonical upstream results intentionally retain embedded commands and would no longer compare exactly. An unbounded loop was rejected because malformed or deliberately self-reproducing content could otherwise consume unbounded CPU.
 
@@ -72,7 +72,7 @@ Supporting Dart 2.x was rejected because it conflicts with the selected downstre
 - **[The 117 examples are representative, not exhaustive]** → Describe the compatibility claim as canonical-corpus conformance, keep differential regression tests for every newly reported case, and avoid claiming all malformed-input behavior is identical.
 - **[Fixture extraction can misread JavaScript escaping]** → Compare regenerated fixture values against the executable pinned JavaScript oracle and assert stable case identifiers and counts.
 - **[Vendored source and fixture could be changed together]** → Verify the immutable source hash before accepting oracle results and review provenance changes separately.
-- **[A new typed API plus a legacy wrapper temporarily expands surface area]** → Centralize all conversion in one typed implementation and document removal of the wrapper as a later pre-1.0 decision.
+- **[A new typed API plus a legacy wrapper expands surface area throughout 0.x]** → Centralize all conversion in `convert`, keep the wrapper trivial, and permit removal only at `1.0.0` or later.
 - **[Recursive expansion can reject intentional literal `\\ce` text]** → Keep it opt-in, document that it is for executable mhchem commands, and leave single-pass conversion available for exact control.
 - **[A moving stable CI job can expose unrelated SDK changes]** → Keep Dart 3.6 as the contractual gate and treat stable failures as compatibility work without weakening the pinned output corpus.
 - **[Resetting the package version can break version-constrained path/git consumers]** → Document the change prominently; current callers can update their constraint while keeping the deprecated API wrapper.
@@ -84,6 +84,6 @@ Supporting Dart 2.x was rejected because it conflicts with the selected downstre
 3. Raise the SDK constraint, add analysis configuration, and introduce the typed API plus legacy wrapper and bounded expansion helper.
 4. Run the Dart port against all 117 cases, reconcile every mismatch with the pinned source, and add focused regression tests for error and expansion behavior.
 5. Add the minimum/current-stable CI matrix and downstream Flutter resolution check, then update both English and Chinese documentation.
-6. Tag the first independently versioned Dart release only after strict OpenSpec validation and all CI gates pass.
+6. After strict OpenSpec validation and all CI gates pass, prepare release notes but do not create a Git tag, GitHub release, or pub.dev publication until separately authorized.
 
 Rollback is a normal Git revert before the first independent release. After release, retain the last passing tag and revert the dependency pin in downstream consumers; no data migration is involved.

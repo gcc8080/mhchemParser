@@ -2,27 +2,32 @@
 
 [中文](README_zh.md)
 
-A Dart port of [mhchemParser](https://github.com/mhchem/mhchemParser) v4.2.2 — a parser that converts mhchem syntax to LaTeX syntax for chemical equations and physical units.
+A dependency-free, pure-Dart port conforming to the 117 canonical
+mhchemParser 4.2.2 examples.
 
-## Features
+## Compatibility
 
-- **Chemical equations** (`\ce`): elements, charges, stoichiometric numbers, isotopes, reaction arrows, bonds, oxidation states, Kröger-Vink notation, etc.
-- **Physical units** (`\pu`): SI units, scientific notation, thousand separators, temperature units, etc.
-- **TeX pass-through** (`tex`): automatically replaces `\ce{...}` and `\pu{...}` within TeX strings.
-- Zero third-party dependencies, pure Dart implementation.
+- Dart package version: `0.1.0`
+- Upstream compatibility: `4.2.2`
+- Upstream commit: `acaf5adb97a08deb234e0a8d62c807c17ee650d6`
+- Dart SDK: `>=3.6.0 <4.0.0`
+- Verified downstream baseline: Flutter `3.27.4`
+- Runtime dependencies: none
 
-## Requirements
-
-- Dart SDK: `>=2.17.0 <3.0.0`
+The package version describes this Dart implementation. It does not replace the
+separate upstream compatibility version.
 
 ## Installation
 
-Add to your `pubspec.yaml`:
+Pin an immutable repository tag or full commit:
 
 ```yaml
 dependencies:
   mhchem_parser:
-    path: path/to/this/directory
+    git:
+      url: https://github.com/gcc8080/mhchemParser.git
+      ref: <approved-release-tag-or-full-commit-sha>
+      path: flutter/mhchemParser
 ```
 
 ## Usage
@@ -30,36 +35,67 @@ dependencies:
 ```dart
 import 'package:mhchem_parser/mhchem_parser.dart';
 
-// Chemical equations
-MhchemParser.toTex('CO2 + C -> 2 CO', 'ce');
-// → {\mathrm{CO}{\vphantom{A}}_{\smash[t]{2}} {}+{} \mathrm{C} {}\mathrel{\longrightarrow}{} 2\,\mathrm{CO}}
-
-// Physical units
-MhchemParser.toTex('123 kJ*mol-1', 'pu');
-// → {123~\mathrm{kJ}\mkern1mu{\cdot}\mkern1mu \mathrm{mol^{-1}}}
-
-// TeX with embedded \ce / \pu
-MhchemParser.toTex(r'm_{\ce{H2O}}', 'tex');
+final equation = MhchemParser.convert(
+  'CO2 + C -> 2 CO',
+  mode: MhchemMode.ce,
+);
+final unit = MhchemParser.convert(
+  '123 kJ*mol-1',
+  mode: MhchemMode.pu,
+);
+final onePassTex = MhchemParser.convert(
+  r'm_{\ce{H2O}}',
+  mode: MhchemMode.tex,
+);
+final expandedTex = MhchemParser.expandAllTex(
+  r'\ce{$\underset{x}{\ce{H2O}}$}',
+);
 ```
 
-## API
+### Modes
 
-### `MhchemParser.toTex(String input, String type) → String`
+| Value | Input |
+|---|---|
+| `MhchemMode.ce` | Chemical equations and formulae |
+| `MhchemMode.pu` | Physical units |
+| `MhchemMode.tex` | TeX containing embedded `\ce` and `\pu` |
 
-| Parameter | Description |
-|-----------|-------------|
-| `input`   | The mhchem syntax string to parse |
-| `type`    | One of `'ce'` (chemical equation), `'pu'` (physical unit), or `'tex'` (TeX pass-through) |
+`convert` is always single-pass and preserves exact upstream output.
+`expandAllTex` defaults to 16 passes and throws `MhchemExpansionException`
+with `MhchemExpansionFailure.passLimit` or `.noProgress` when complete
+expansion cannot be proven.
 
-Returns a LaTeX string.
+`MhchemParser.toTex(String input, String type)` is deprecated, delegates to
+the typed API, and remains available throughout `0.x`. It will not be removed
+before `1.0.0`.
+
+## Output contract
+
+Canonical output is character-for-character compatible with the pinned
+JavaScript oracle. Renderer-extension commands are preserved instead of
+normalized. Rendering support remains a downstream responsibility.
+
+The JavaScript baseline and Node verification tools are repository-only test
+assets. They are not runtime dependencies and are not imported by this package.
 
 ## Testing
 
-```bash
+```sh
 dart pub get
+dart format --output=none --set-exit-if-changed lib test
+dart analyze --fatal-infos
 dart test
+dart pub publish --dry-run
 ```
+
+Repository-level provenance and conformance commands are documented in
+[`UPSTREAM.md`](../../UPSTREAM.md).
+
+## Release status
+
+Version `0.1.0` is prepared by the conformance change. No tag, GitHub release,
+or pub.dev publication is implied.
 
 ## License
 
-Based on [mhchemParser](https://github.com/mhchem/mhchemParser) by Martin Hensel, licensed under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+Apache License 2.0. See [LICENSE](LICENSE) and the repository provenance record.

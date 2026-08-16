@@ -1,104 +1,116 @@
-# mhchem Parser
+# mhchemParser Dart 移植版
 
 [English](README.md)
 
-mhchem 是一种用于排版化学方程式和物理单位的输入语法。
+本仓库同时保存经过审计的 mhchemParser 4.2.2 JavaScript/TypeScript 基线，以及独立版本管理、零运行时依赖的纯 Dart 移植版，用于将 mhchem 输入转换为 LaTeX。
 
-本项目是 [mhchemParser](https://github.com/mhchem/mhchemParser) v4.2.2 的 Dart/Flutter 移植版本，将 mhchem 语法转换为 LaTeX 语法，可用于 MathJax、KaTeX 等数学排版引擎的下游集成。
+## 兼容性
 
-## 项目结构
+| 组件 | 契约 |
+|---|---|
+| Dart 包 | `mhchem_parser 0.1.0` |
+| 上游行为 | mhchemParser `4.2.2`，提交 `acaf5adb97a08deb234e0a8d62c807c17ee650d6` |
+| Dart SDK | `>=3.6.0 <4.0.0` |
+| 下游 Flutter 基线 | Flutter `3.27.4` 及后续兼容版本 |
+| 运行时依赖 | 无；纯 Dart |
 
-```
+Dart 包版本与上游兼容版本相互独立。不可变来源、文件哈希与验证命令见 [UPSTREAM.md](UPSTREAM.md)。
+
+## 仓库结构
+
+```text
 mhchemParser/
-├── js/                         # JavaScript/TypeScript 原始版本 (v4.2.2)
-│   └── mhchemParser/
-│       ├── src/                # TypeScript 源码
-│       ├── dist/               # 编译后的 JS (UMD)
-│       ├── esm/                # ES Module 版本
-│       └── test/               # 测试文件
-├── flutter/                    # Dart 移植版本
-│   └── mhchemParser/
-│       ├── lib/
-│       │   ├── mhchem_parser.dart           # 对外导出入口
-│       │   └── src/
-│       │       ├── mhchem_parser.dart       # 公共 API
-│       │       ├── mhchem_parser_core.dart  # 核心解析器 (状态机)
-│       │       ├── mhchem_texify.dart       # LaTeX 渲染器
-│       │       └── types.dart               # 类型定义
-│       ├── test/
-│       │   └── mhchem_parser_test.dart      # 测试用例
-│       └── pubspec.yaml
-└── README.md
+├── js/mhchemParser/               # 经审计的上游 4.2.2 源码和 JS oracle
+├── flutter/mhchemParser/          # 可发布的纯 Dart 包
+├── tools/conformance/             # 来源、语料、oracle 和运行时边界检查
+├── tool/flutter_consumer/         # Flutter 3.27.4 消费方验证
+└── openspec/                      # 版本化行为契约与实施计划
 ```
 
-## Dart 版本
+## 安装
 
-### 环境要求
-
-- Dart SDK: `>=2.17.0 <3.0.0`
-- Flutter: `3.10.6`（兼容）
-- 零第三方依赖
-
-### 安装
-
-在 `pubspec.yaml` 中添加依赖：
+请固定完整提交 SHA 或经过批准的不可变 tag；Dart 包继续位于仓库子目录：
 
 ```yaml
 dependencies:
   mhchem_parser:
-    path: path/to/flutter/mhchemParser
+    git:
+      url: https://github.com/gcc8080/mhchemParser.git
+      ref: <approved-release-tag-or-full-commit-sha>
+      path: flutter/mhchemParser
 ```
 
-### 使用方法
+本地开发也可以使用 path 依赖：
+
+```yaml
+dependencies:
+  mhchem_parser:
+    path: ../mhchemParser/flutter/mhchemParser
+```
+
+## 公共 API
 
 ```dart
 import 'package:mhchem_parser/mhchem_parser.dart';
 
-// 化学方程式
-String tex = MhchemParser.toTex('CO2 + C -> 2 CO', 'ce');
+final equation = MhchemParser.convert(
+  'CO2 + C -> 2 CO',
+  mode: MhchemMode.ce,
+);
 
-// 物理单位
-String pu = MhchemParser.toTex('123 kJ*mol-1', 'pu');
+final unit = MhchemParser.convert(
+  '123 kJ*mol-1',
+  mode: MhchemMode.pu,
+);
 
-// TeX 字符串（自动替换其中的 \ce 和 \pu）
-String tex2 = MhchemParser.toTex(r'm_{\ce{H2O}}', 'tex');
+final onePass = MhchemParser.convert(
+  r'm_{\ce{H2O}} = \pu{1.2kg}',
+  mode: MhchemMode.tex,
+);
+
+final completelyExpanded = MhchemParser.expandAllTex(
+  r'\ce{$\frac{\ce{H2O}}{1}$}',
+);
 ```
 
-### 支持的模式
+`convert` 严格执行一次上游兼容转换。`expandAllTex` 是显式选择的完整展开接口，默认最多 16 次；如果达到上限或无法继续推进，会抛出带 `passLimit` 或 `noProgress` 原因的 `MhchemExpansionException`，不会把不完整结果伪装成成功。
 
-| 模式   | 说明         | 示例输入              |
-|--------|--------------|----------------------|
-| `ce`   | 化学方程式    | `CO2 + C -> 2 CO`   |
-| `pu`   | 物理单位      | `123 kJ*mol-1`      |
-| `tex`  | TeX 透传模式  | `m_{\ce{H2O}}`      |
+旧接口 `MhchemParser.toTex(input, 'ce')` 已废弃，但会在整个 `0.x` 版本线中保留，最早只能在 `1.0.0` 移除。
 
-### 功能特性
+公共版本元数据：
 
-- 化学方程式与化学式（元素、电荷、化学计量数）
-- 反应箭头（`->`、`<->`、`<=>`、`<-->`等）
-- 化学键（单键、双键、三键、芳香键等）
-- 同位素与核素标记
-- 氧化态（罗马数字）
-- 聚集态标记（`(aq)`、`(s)`、`(g)`、`(l)`）
-- 物理单位（SI 单位、科学计数法、千分位分隔）
-- Kröger-Vink 记号
-- 希腊字母
-- 颜色标记
+- `MhchemParser.packageVersion`
+- `MhchemParser.upstreamVersion`
+- `MhchemParser.upstreamCommit`
 
-### 运行测试
+## 精确输出边界
 
-```bash
+117 条固定官方用例必须与上游 4.2.2 输出逐字符一致。解析包不会为了适配较小的 KaTeX 命令子集而改写输出。`\mathchoice`、`\smash`、水平叠放、垂直位移、`\tripledash` 以及 mhchem 长箭头等命令属于下游渲染器契约。
+
+JavaScript 仅在离线一致性验证中作为 oracle 使用。发布的 Dart 包运行时不依赖 JavaScript、Flutter、WebView、插件或网络。
+
+## 验证
+
+```sh
+node tools/conformance/check-upstream.mjs
+node tools/conformance/extract-corpus.mjs --check
+node tools/conformance/verify-oracle.mjs
+node tools/conformance/check-runtime-boundary.mjs
+
 cd flutter/mhchemParser
 dart pub get
+dart format --output=none --set-exit-if-changed lib test
+dart analyze --fatal-infos
 dart test
+dart pub publish --dry-run
 ```
 
-## 原始版本
+CI 会使用 Dart 3.6、当前 stable Dart 和 Flutter 3.27.4 消费方运行检查。117 条用例代表固定官方兼容语料，不表示所有非法输入都与 JavaScript 完全等价。
 
-JavaScript/TypeScript 原始版本的使用方法请参考 [mhchemParser 官方仓库](https://github.com/mhchem/mhchemParser)。
+## 发布边界
+
+本变更只准备 `0.1.0` 包内容。创建 Git tag、GitHub Release 或发布到 pub.dev 均需单独授权。
 
 ## 许可证
 
-原始项目基于 [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0) 许可，版权归 Martin Hensel 所有（2015-2023）。
-
-Dart 移植版本沿用相同许可证。
+Apache License 2.0。上游版权与归属保留在 [LICENSE](LICENSE)、[UPSTREAM.md](UPSTREAM.md) 和经审计的源码中。

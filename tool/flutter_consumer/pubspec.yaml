@@ -1,0 +1,17 @@
+name: mhchem_parser_flutter_consumer
+description: CI-only Flutter consumer for mhchem_parser compatibility checks.
+publish_to: none
+version: 0.0.0
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  mhchem_parser:
+    path: ../../flutter/mhchemParser
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

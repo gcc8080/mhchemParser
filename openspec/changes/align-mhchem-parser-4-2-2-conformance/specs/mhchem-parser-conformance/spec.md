@@ -36,10 +36,10 @@ For every valid canonical example published with the pinned upstream baseline, t
 - **THEN** those commands are preserved exactly rather than rewritten or rejected by the parser package
 
 ### Requirement: Supported conversion modes and compatibility entry point
-The package SHALL provide a type-safe public representation of the `tex`, `ce`, and `pu` modes. It SHALL also retain the existing string-mode conversion entry point as a deprecated compatibility wrapper for valid callers, and invalid string modes SHALL fail with a public argument error rather than an internal null assertion or state-machine failure.
+The package SHALL provide `MhchemMode.tex`, `MhchemMode.ce`, and `MhchemMode.pu` and SHALL expose `MhchemParser.convert(String input, {required MhchemMode mode})` as its type-safe, single-pass conversion entry point. It SHALL retain `MhchemParser.toTex(String input, String type)` as a deprecated compatibility wrapper throughout the `0.x` release line, and removal MUST NOT occur before version `1.0.0`. Invalid string modes SHALL fail with a public argument error rather than an internal null assertion or state-machine failure.
 
 #### Scenario: Type-safe conversion
-- **WHEN** a caller converts an input using any type-safe supported mode
+- **WHEN** a caller invokes `MhchemParser.convert` with any `MhchemMode` value
 - **THEN** the output is identical to conversion of the same input through the corresponding upstream mode
 
 #### Scenario: Existing valid string-mode caller
@@ -51,7 +51,7 @@ The package SHALL provide a type-safe public representation of the `tex`, `ce`, 
 - **THEN** conversion fails deterministically with an argument error that identifies the invalid value and supported values
 
 ### Requirement: Bounded recursive embedded-command expansion
-The package SHALL provide an opt-in TeX expansion operation that repeatedly expands embedded `\\ce{...}` and `\\pu{...}` commands using the same 4.2.2 conversion rules. The operation SHALL default to a maximum of 16 passes, SHALL accept an explicit positive pass limit, and MUST fail clearly instead of silently returning partial output when recognized commands remain after reaching the limit or a non-progressing state. The primary conversion operation SHALL remain single-pass and upstream-exact.
+The package SHALL expose `MhchemParser.expandAllTex(String input, {int maxPasses = 16})` as an opt-in TeX expansion operation that repeatedly expands embedded `\\ce{...}` and `\\pu{...}` commands using the same 4.2.2 conversion rules. The operation SHALL accept only a positive pass limit and MUST throw a public `MhchemExpansionException` that distinguishes pass-limit and non-progress failures instead of silently returning partial output. The primary `convert` and legacy `toTex` operations SHALL remain single-pass and upstream-exact.
 
 #### Scenario: Nested embedded commands converge
 - **WHEN** a TeX expression contains nested supported mhchem commands that require more than one conversion pass
@@ -59,11 +59,11 @@ The package SHALL provide an opt-in TeX expansion operation that repeatedly expa
 
 #### Scenario: Expansion reaches its pass limit
 - **WHEN** recognized embedded mhchem commands remain after the configured maximum number of passes
-- **THEN** the operation fails with a depth-limit error and does not report partial output as complete
+- **THEN** the operation throws `MhchemExpansionException` with the pass-limit reason and does not report partial output as complete
 
 #### Scenario: Expansion makes no progress
 - **WHEN** a pass leaves the expression unchanged while recognized embedded mhchem commands remain
-- **THEN** the operation fails with a non-progress error instead of looping
+- **THEN** the operation throws `MhchemExpansionException` with the non-progress reason instead of looping
 
 #### Scenario: Primary conversion receives nested content
 - **WHEN** the primary single-pass converter is used on an input whose upstream result retains an embedded mhchem command
@@ -109,3 +109,7 @@ The Dart port SHALL use its own semantic package version beginning at `0.1.0` an
 #### Scenario: Consumer inspects version identity
 - **WHEN** a consumer reads package metadata or the public compatibility metadata
 - **THEN** the Dart implementation version and its pinned mhchemParser compatibility version are unambiguous
+
+#### Scenario: Apply completes without a release
+- **WHEN** the implementation and verification tasks for this change complete
+- **THEN** no Git tag, GitHub release, or pub.dev publication is created without separate authorization

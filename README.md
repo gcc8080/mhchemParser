@@ -1,104 +1,135 @@
-# mhchem Parser
+# mhchemParser Dart port
 
 [中文](README_zh.md)
 
-mhchem is an input syntax for typesetting chemical equations and physical units.
+This repository contains the audited mhchemParser 4.2.2 JavaScript/TypeScript
+baseline and an independently versioned, dependency-free Dart port that converts
+mhchem input to LaTeX.
 
-This project is a Dart/Flutter port of [mhchemParser](https://github.com/mhchem/mhchemParser) v4.2.2, converting mhchem syntax to LaTeX syntax for downstream integration with MathJax, KaTeX and similar projects.
+## Compatibility
 
-## Project Structure
+| Component | Contract |
+|---|---|
+| Dart package | `mhchem_parser 0.1.0` |
+| Upstream behavior | mhchemParser `4.2.2`, commit `acaf5adb97a08deb234e0a8d62c807c17ee650d6` |
+| Dart SDK | `>=3.6.0 <4.0.0` |
+| Downstream Flutter baseline | Flutter `3.27.4` or newer compatible releases |
+| Runtime dependencies | None; pure Dart |
 
-```
+The Dart release version and upstream compatibility version are intentionally
+separate. See [UPSTREAM.md](UPSTREAM.md) for immutable source hashes, provenance,
+and verification commands.
+
+## Repository layout
+
+```text
 mhchemParser/
-├── js/                         # Original JavaScript/TypeScript version (v4.2.2)
-│   └── mhchemParser/
-│       ├── src/                # TypeScript source
-│       ├── dist/               # Compiled JS (UMD)
-│       ├── esm/                # ES Module build
-│       └── test/               # Test files
-├── flutter/                    # Dart port
-│   └── mhchemParser/
-│       ├── lib/
-│       │   ├── mhchem_parser.dart           # Public export
-│       │   └── src/
-│       │       ├── mhchem_parser.dart       # Public API
-│       │       ├── mhchem_parser_core.dart  # Core parser (state machines)
-│       │       ├── mhchem_texify.dart       # LaTeX renderer
-│       │       └── types.dart               # Type definitions
-│       ├── test/
-│       │   └── mhchem_parser_test.dart      # Test cases
-│       └── pubspec.yaml
-└── README.md
+├── js/mhchemParser/               # Audited upstream 4.2.2 source and JS oracle
+├── flutter/mhchemParser/          # Publishable pure-Dart package
+├── tools/conformance/             # Source, corpus, oracle, and runtime checks
+├── tool/flutter_consumer/         # Flutter 3.27.4 resolution/smoke fixture
+└── openspec/                      # Versioned behavior and implementation plan
 ```
 
-## Dart Version
+## Installation
 
-### Requirements
-
-- Dart SDK: `>=2.17.0 <3.0.0`
-- Flutter: `3.10.6` compatible
-- Zero third-party dependencies
-
-### Installation
-
-Add to your `pubspec.yaml`:
+Pin a full commit or an approved immutable release tag. The Dart package remains
+in the repository subdirectory:
 
 ```yaml
 dependencies:
   mhchem_parser:
-    path: path/to/flutter/mhchemParser
+    git:
+      url: https://github.com/gcc8080/mhchemParser.git
+      ref: <approved-release-tag-or-full-commit-sha>
+      path: flutter/mhchemParser
 ```
 
-### Usage
+A local path dependency is also supported during development:
+
+```yaml
+dependencies:
+  mhchem_parser:
+    path: ../mhchemParser/flutter/mhchemParser
+```
+
+## Public API
 
 ```dart
 import 'package:mhchem_parser/mhchem_parser.dart';
 
-// Chemical equations
-String tex = MhchemParser.toTex('CO2 + C -> 2 CO', 'ce');
+final equation = MhchemParser.convert(
+  'CO2 + C -> 2 CO',
+  mode: MhchemMode.ce,
+);
 
-// Physical units
-String pu = MhchemParser.toTex('123 kJ*mol-1', 'pu');
+final unit = MhchemParser.convert(
+  '123 kJ*mol-1',
+  mode: MhchemMode.pu,
+);
 
-// TeX strings (auto-replaces \ce and \pu)
-String tex2 = MhchemParser.toTex(r'm_{\ce{H2O}}', 'tex');
+final onePass = MhchemParser.convert(
+  r'm_{\ce{H2O}} = \pu{1.2kg}',
+  mode: MhchemMode.tex,
+);
+
+final completelyExpanded = MhchemParser.expandAllTex(
+  r'\ce{$\frac{\ce{H2O}}{1}$}',
+);
 ```
 
-### Supported Modes
+`convert` performs exactly one upstream-compatible pass. `expandAllTex` is
+opt-in, defaults to 16 passes, and throws `MhchemExpansionException` with a
+`passLimit` or `noProgress` reason rather than returning incomplete output.
 
-| Mode   | Description        | Example Input         |
-|--------|--------------------|-----------------------|
-| `ce`   | Chemical equations | `CO2 + C -> 2 CO`    |
-| `pu`   | Physical units     | `123 kJ*mol-1`       |
-| `tex`  | TeX pass-through   | `m_{\ce{H2O}}`       |
+The old `MhchemParser.toTex(input, 'ce')` entry point is deprecated but remains
+available throughout the complete `0.x` release line. It will not be removed
+before `1.0.0`.
 
-### Features
+Public metadata is available as:
 
-- Chemical equations and formulae (elements, charges, stoichiometric numbers)
-- Reaction arrows (`->`, `<->`, `<=>`, `<-->`, etc.)
-- Chemical bonds (single, double, triple, aromatic, etc.)
-- Isotopes and nuclide notation
-- Oxidation states (Roman numerals)
-- States of aggregation (`(aq)`, `(s)`, `(g)`, `(l)`)
-- Physical units (SI units, scientific notation, thousand separators)
-- Kröger-Vink notation
-- Greek letters
-- Color markup
+- `MhchemParser.packageVersion`
+- `MhchemParser.upstreamVersion`
+- `MhchemParser.upstreamCommit`
 
-### Running Tests
+## Exact-output boundary
 
-```bash
+The parser preserves upstream 4.2.2 LaTeX character-for-character for the 117
+canonical cases. It does not rewrite output into a smaller KaTeX subset.
+Commands such as `\mathchoice`, `\smash`, lapping, primitive vertical
+shifts, `\tripledash`, and mhchem long arrows belong to the downstream
+renderer contract.
+
+The JavaScript implementation is used only as an offline conformance oracle.
+The shipped Dart package has no JavaScript, Flutter, WebView, plugin, or network
+runtime dependency.
+
+## Verification
+
+```sh
+node tools/conformance/check-upstream.mjs
+node tools/conformance/extract-corpus.mjs --check
+node tools/conformance/verify-oracle.mjs
+node tools/conformance/check-runtime-boundary.mjs
+
 cd flutter/mhchemParser
 dart pub get
+dart format --output=none --set-exit-if-changed lib test
+dart analyze --fatal-infos
 dart test
+dart pub publish --dry-run
 ```
 
-## Original Version
+CI runs the checks with Dart 3.6, current stable Dart, and a Flutter 3.27.4
+consumer. The 117 examples are the pinned canonical compatibility corpus, not a
+claim that every malformed input behaves identically.
 
-For the original JavaScript/TypeScript version, see the [mhchemParser repository](https://github.com/mhchem/mhchemParser).
+## Release boundary
+
+This change prepares package version `0.1.0`. Creating a Git tag, GitHub
+release, or pub.dev publication requires separate authorization.
 
 ## License
 
-The original project is licensed under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0), copyright Martin Hensel (2015-2023).
-
-The Dart port follows the same license.
+Apache License 2.0. The upstream copyright and attribution are preserved in
+[LICENSE](LICENSE), [UPSTREAM.md](UPSTREAM.md), and the audited source files.
