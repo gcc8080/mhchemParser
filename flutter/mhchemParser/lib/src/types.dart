@@ -63,7 +63,8 @@ class Task {
   final String? nextState;
   final bool revisit;
   final bool toContinue;
-  Task(this.action_, {this.nextState, this.revisit = false, this.toContinue = false});
+  Task(this.action_,
+      {this.nextState, this.revisit = false, this.toContinue = false});
 }
 
 class ActionEntry {

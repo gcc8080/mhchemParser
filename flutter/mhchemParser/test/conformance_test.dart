@@ -20,8 +20,8 @@ void main() {
     ).readAsStringSync(),
   ) as Map<String, dynamic>;
   final counts = fixture['counts'] as Map<String, dynamic>;
-  final cases = (fixture['cases'] as List<dynamic>)
-      .cast<Map<String, dynamic>>();
+  final cases =
+      (fixture['cases'] as List<dynamic>).cast<Map<String, dynamic>>();
 
   test('canonical corpus identity and counts are complete', () {
     expect(fixture['schemaVersion'], 1);

@@ -70,8 +70,7 @@ void main() {
   });
 
   group('complete TeX expansion', () {
-    const nested =
-        r'\ce{$\frac{\ce{$\underset{x}{\ce{H2O}}$}}{1}$}';
+    const nested = r'\ce{$\frac{\ce{$\underset{x}{\ce{H2O}}$}}{1}$}';
     const expanded =
         r'{\frac{{\underset{x}{{\mathrm{H}{\vphantom{A}}_{\smash[t]{2}}\mathrm{O}}} }}{1} }';
 

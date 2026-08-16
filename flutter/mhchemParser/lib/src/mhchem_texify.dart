@@ -133,24 +133,19 @@ class MhchemTexify {
         res = '${buf['p1']} ';
         break;
       case 'frac-ce':
-        res =
-            '\\frac{${_goInner(buf['p1'])}}{${_goInner(buf['p2'])}}';
+        res = '\\frac{${_goInner(buf['p1'])}}{${_goInner(buf['p2'])}}';
         break;
       case 'overset':
-        res =
-            '\\overset{${_goInner(buf['p1'])}}{${_goInner(buf['p2'])}}';
+        res = '\\overset{${_goInner(buf['p1'])}}{${_goInner(buf['p2'])}}';
         break;
       case 'underset':
-        res =
-            '\\underset{${_goInner(buf['p1'])}}{${_goInner(buf['p2'])}}';
+        res = '\\underset{${_goInner(buf['p1'])}}{${_goInner(buf['p2'])}}';
         break;
       case 'underbrace':
-        res =
-            '\\underbrace{${_goInner(buf['p1'])}}_{${_goInner(buf['p2'])}}';
+        res = '\\underbrace{${_goInner(buf['p1'])}}_{${_goInner(buf['p2'])}}';
         break;
       case 'color':
-        res =
-            '{\\color{${buf['color1']}}{${_goInner(buf['color2'])}}}';
+        res = '{\\color{${buf['color1']}}{${_goInner(buf['color2'])}}}';
         break;
       case 'color0':
         res = '\\color{${buf['color']}}';

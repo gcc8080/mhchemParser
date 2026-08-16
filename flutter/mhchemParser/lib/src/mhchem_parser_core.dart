@@ -37,8 +37,7 @@ Map<String, List<Transition>> _createTransitions(
           } else if (a is ActionEntry) {
             actions.add(a);
           } else if (a is Map<String, dynamic>) {
-            actions.add(ActionEntry(
-                a['type_'] as String, a['option']));
+            actions.add(ActionEntry(a['type_'] as String, a['option']));
           }
         }
         final task = Task(
@@ -52,12 +51,10 @@ Map<String, List<Transition>> _createTransitions(
         for (final pat in patternArray) {
           if (stateArray[i] == '*') {
             for (final t in transitions.keys.toList()) {
-              transitions[t]!
-                  .add(Transition(pat, task));
+              transitions[t]!.add(Transition(pat, task));
             }
           } else {
-            transitions[stateArray[i]]!
-                .add(Transition(pat, task));
+            transitions[stateArray[i]]!.add(Transition(pat, task));
           }
         }
       }
@@ -88,8 +85,7 @@ class MhchemParserCore {
         watchdog--;
       }
       final machine = _stateMachines[stateMachine]!;
-      final t =
-          machine.transitions[state] ?? machine.transitions['*'] ?? [];
+      final t = machine.transitions[state] ?? machine.transitions['*'] ?? [];
       iterateTransitions:
       for (int i = 0; i < t.length; i++) {
         final matches = _match(t[i].pattern, input!);
@@ -106,8 +102,8 @@ class MhchemParserCore {
               o = _globalActions[actionType]!(
                   buffer, matches.match_, actionOption);
             } else {
-              throw MhchemError('MhchemBugA',
-                  'mhchem bug A. Please report. ($actionType)');
+              throw MhchemError(
+                  'MhchemBugA', 'mhchem bug A. Please report. ($actionType)');
             }
             concatArray(output, o);
           }
@@ -125,8 +121,7 @@ class MhchemParserCore {
         }
       }
       if (watchdog <= 0) {
-        throw MhchemError(
-            'MhchemBugU', 'mhchem bug U. Please report.');
+        throw MhchemError('MhchemBugU', 'mhchem bug U. Please report.');
       }
     }
   }
@@ -159,12 +154,8 @@ class MhchemParserCore {
     }
   }
 
-  static MatchResult? _findObserveGroups(
-      String input,
-      Object begExcl,
-      Object begIncl,
-      Object endIncl,
-      Object endExcl,
+  static MatchResult? _findObserveGroups(String input, Object begExcl,
+      Object begIncl, Object endIncl, Object endExcl,
       [Object? beg2Excl,
       Object? beg2Incl,
       Object? end2Incl,
@@ -175,25 +166,17 @@ class MhchemParserCore {
     input = input.substring(match.length);
     match = _matchHelper(input, begIncl);
     if (match == null) return null;
-    final endChars = (endIncl is String && endIncl.isNotEmpty)
-        ? endIncl
-        : endExcl;
+    final endChars =
+        (endIncl is String && endIncl.isNotEmpty) ? endIncl : endExcl;
     final e = _findObserveGroupsInner(input, match.length, endChars);
     if (e == null) return null;
     final match1 = input.substring(
-        0,
-        (endIncl is String && endIncl.isNotEmpty)
-            ? e[1]
-            : e[0]);
+        0, (endIncl is String && endIncl.isNotEmpty) ? e[1] : e[0]);
     if (beg2Excl == null && beg2Incl == null) {
       return MatchResult(match1, input.substring(e[1]));
     } else {
-      final group2 = _findObserveGroups(
-          input.substring(e[1]),
-          beg2Excl ?? '',
-          beg2Incl ?? '',
-          end2Incl ?? '',
-          end2Excl ?? '');
+      final group2 = _findObserveGroups(input.substring(e[1]), beg2Excl ?? '',
+          beg2Incl ?? '', end2Incl ?? '', end2Excl ?? '');
       if (group2 == null) return null;
       final List<String> matchRet = [match1, group2.match_ as String];
       return MatchResult(
@@ -244,8 +227,7 @@ class MhchemParserCore {
         return MatchResult(groups, input.substring(m.end));
       } else {
         final match1 = m.groupCount >= 1 ? m.group(1) : null;
-        return MatchResult(
-            match1 ?? m.group(0)!, input.substring(m.end));
+        return MatchResult(match1 ?? m.group(0)!, input.substring(m.end));
       }
     }
     return null;
@@ -321,8 +303,7 @@ class MhchemParserCore {
           '', '{', '}', '', true);
     },
     '^\\x{}': (String input) {
-      return _findObserveGroups(
-          input, '^', RegExp(r'^\\[a-zA-Z]+\{'), '}', '');
+      return _findObserveGroups(input, '^', RegExp(r'^\\[a-zA-Z]+\{'), '}', '');
     },
     '^\\x': RegExp(r'^\^(\\[a-zA-Z]+)\s*'),
     '^(-1)': RegExp(r'^\^(-?\d+)'),
@@ -339,8 +320,7 @@ class MhchemParserCore {
           '', '{', '}', '', true);
     },
     '_\\x{}': (String input) {
-      return _findObserveGroups(
-          input, '_', RegExp(r'^\\[a-zA-Z]+\{'), '}', '');
+      return _findObserveGroups(input, '_', RegExp(r'^\\[a-zA-Z]+\{'), '}', '');
     },
     '_\\x': RegExp(r'^_(\\[a-zA-Z]+)\s*'),
     '^_': RegExp(r'^(?:\^(?=_)|\_(?=\^)|[\^_]$)'),
@@ -364,14 +344,12 @@ class MhchemParserCore {
     '+': RegExp(r'^\+'),
     '-\$': RegExp(r'^-(?=[\s_},;\]/]|$|\([a-z]+\))'),
     '-9': RegExp(r'^-(?=[0-9])'),
-    '- orbital overlap':
-        RegExp(r'^-(?=(?:[spd]|sp)(?:$|[\s,;\)\]\}]))'),
+    '- orbital overlap': RegExp(r'^-(?=(?:[spd]|sp)(?:$|[\s,;\)\]\}]))'),
     '-': RegExp(r'^-'),
     'pm-operator': RegExp(r'^(?:\\pm|\$\\pm\$|\+-|\+\/-)'),
     'operator': RegExp(
         r'^(?:\+|(?:[\-=<>]|<<|>>|\\approx|\$\\approx\$)(?=\s|$|-?[0-9]))'),
-    'arrowUpDown':
-        RegExp(r'^(?:v|\(v\)|\^|\(\^\))(?=$|[\s,;\)\]\}])'),
+    'arrowUpDown': RegExp(r'^(?:v|\(v\)|\^|\(\^\))(?=$|[\s,;\)\]\}])'),
     '\\bond{(...)}': (String input) {
       return _findObserveGroups(input, '\\bond{', '', '', '}');
     },
@@ -383,12 +361,11 @@ class MhchemParserCore {
     '1st-level escape': RegExp(r'^(&|\\\\|\\hline)\s*'),
     '\\,': RegExp(r'^(?:\\[,\ ;:])'),
     '\\x{}{}': (String input) {
-      return _findObserveGroups(
-          input, '', RegExp(r'^\\[a-zA-Z]+\{'), '}', '', '', '{', '}', '', true);
+      return _findObserveGroups(input, '', RegExp(r'^\\[a-zA-Z]+\{'), '}', '',
+          '', '{', '}', '', true);
     },
     '\\x{}': (String input) {
-      return _findObserveGroups(
-          input, '', RegExp(r'^\\[a-zA-Z]+\{'), '}', '');
+      return _findObserveGroups(input, '', RegExp(r'^\\[a-zA-Z]+\{'), '}', '');
     },
     '\\ca': RegExp(r'^\\ca(?:\s+|(?![a-zA-Z]))'),
     '\\x': RegExp(r'^(?:\\[a-zA-Z]+\s*|\\[_&{}%])'),
@@ -425,8 +402,7 @@ class MhchemParserCore {
     '\\pu{(...)}': (String input) {
       return _findObserveGroups(input, '\\pu{', '', '', '}');
     },
-    'oxidation\$':
-        RegExp(r'^(?:[+-][IVX]+|(?:\\pm|\$\\pm\$|\+-|\+\/-)\s*0)$'),
+    'oxidation\$': RegExp(r'^(?:[+-][IVX]+|(?:\\pm|\$\\pm\$|\+-|\+\/-)\s*0)$'),
     'd-oxidation\$':
         RegExp(r'^(?:[+-]?[IVX]+|(?:\\pm|\$\\pm\$|\+-|\+\/-)\s*0)$'),
     '1/2\$': RegExp(
@@ -559,8 +535,9 @@ class MhchemParserCore {
         ret.add(ms.substring(0, 1));
         ms = ms.substring(1);
       }
-      final n = RegExp(r'^([0-9]+|\$[a-z]\$|[a-z])\/([0-9]+)(\$[a-z]\$|[a-z])?$')
-          .firstMatch(ms)!;
+      final n =
+          RegExp(r'^([0-9]+|\$[a-z]\$|[a-z])\/([0-9]+)(\$[a-z]\$|[a-z])?$')
+              .firstMatch(ms)!;
       String n1 = n.group(1)!.replaceAll(r'$', '');
       ret.add({'type_': 'frac', 'p1': n1, 'p2': n.group(2)!});
       if (n.group(3) != null) {
@@ -667,8 +644,7 @@ class MhchemParserCore {
     return ret;
   }
 
-  static Object? _ceOAfterD(
-      Buffer buffer, dynamic m, dynamic option) {
+  static Object? _ceOAfterD(Buffer buffer, dynamic m, dynamic option) {
     List<Object> ret;
     if (RegExp(r'^[1-9][0-9]*$').hasMatch(buffer.d ?? '')) {
       final tmp = buffer.d;
@@ -683,8 +659,7 @@ class MhchemParserCore {
     return ret;
   }
 
-  static Object? _ceChargeOrBond(
-      Buffer buffer, dynamic m, dynamic option) {
+  static Object? _ceChargeOrBond(Buffer buffer, dynamic m, dynamic option) {
     if (buffer.beginsWithBond) {
       final ret = <Object>[];
       concatArray(ret, _ceOutput(buffer, null, null));
@@ -696,17 +671,16 @@ class MhchemParserCore {
     }
   }
 
-  static Object? _ceMinusAfterOD(
-      Buffer buffer, dynamic m, dynamic isAfterD) {
+  static Object? _ceMinusAfterOD(Buffer buffer, dynamic m, dynamic isAfterD) {
     var c1 = _match('orbital', buffer.o ?? '');
-    final c2 =
-        _match('one lowercase greek letter \$', buffer.o ?? '');
-    final c3 =
-        _match('one lowercase latin letter \$', buffer.o ?? '');
-    final c4 =
-        _match('\$one lowercase latin letter\$ \$', buffer.o ?? '');
+    final c2 = _match('one lowercase greek letter \$', buffer.o ?? '');
+    final c3 = _match('one lowercase latin letter \$', buffer.o ?? '');
+    final c4 = _match('\$one lowercase latin letter\$ \$', buffer.o ?? '');
     final hyphenFollows = m == '-' &&
-        ((c1 != null && c1.remainder == '') || c2 != null || c3 != null || c4 != null);
+        ((c1 != null && c1.remainder == '') ||
+            c2 != null ||
+            c3 != null ||
+            c4 != null);
     if (hyphenFollows &&
         buffer.a == null &&
         buffer.b == null &&
@@ -734,7 +708,8 @@ class MhchemParserCore {
     return ret;
   }
 
-  static late final Map<String, StateMachine> _stateMachines = _buildStateMachines();
+  static late final Map<String, StateMachine> _stateMachines =
+      _buildStateMachines();
 
   static Map<String, StateMachine> _buildStateMachines() {
     return {
@@ -1308,28 +1283,23 @@ class MhchemParserCore {
             buffer.sb = false;
             return null;
           },
-          'beginsWithBond=true':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'beginsWithBond=true': (Buffer buffer, dynamic m, dynamic option) {
             buffer.beginsWithBond = true;
             return null;
           },
-          'beginsWithBond=false':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'beginsWithBond=false': (Buffer buffer, dynamic m, dynamic option) {
             buffer.beginsWithBond = false;
             return null;
           },
-          'parenthesisLevel++':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'parenthesisLevel++': (Buffer buffer, dynamic m, dynamic option) {
             buffer.parenthesisLevel++;
             return null;
           },
-          'parenthesisLevel--':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'parenthesisLevel--': (Buffer buffer, dynamic m, dynamic option) {
             buffer.parenthesisLevel--;
             return null;
           },
-          'state of aggregation':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'state of aggregation': (Buffer buffer, dynamic m, dynamic option) {
             return {
               'type_': 'state of aggregation',
               'p1': go(m as String, 'o'),
@@ -1345,8 +1315,7 @@ class MhchemParserCore {
             }
           },
           'output': _ceOutput,
-          'oxidation-output':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'oxidation-output': (Buffer buffer, dynamic m, dynamic option) {
             final ret = <Object>['{'];
             concatArray(ret, go(m as String, 'oxidation'));
             ret.add('}');
@@ -1359,32 +1328,28 @@ class MhchemParserCore {
               'p2': go(m[1] as String, 'ce'),
             };
           },
-          'overset-output':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'overset-output': (Buffer buffer, dynamic m, dynamic option) {
             return {
               'type_': 'overset',
               'p1': go((m as List)[0] as String, 'ce'),
               'p2': go(m[1] as String, 'ce'),
             };
           },
-          'underset-output':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'underset-output': (Buffer buffer, dynamic m, dynamic option) {
             return {
               'type_': 'underset',
               'p1': go((m as List)[0] as String, 'ce'),
               'p2': go(m[1] as String, 'ce'),
             };
           },
-          'underbrace-output':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'underbrace-output': (Buffer buffer, dynamic m, dynamic option) {
             return {
               'type_': 'underbrace',
               'p1': go((m as List)[0] as String, 'ce'),
               'p2': go(m[1] as String, 'ce'),
             };
           },
-          'color-output':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'color-output': (Buffer buffer, dynamic m, dynamic option) {
             return {
               'type_': 'color',
               'color1': (m as List)[0],
@@ -1613,8 +1578,7 @@ class MhchemParserCore {
           },
         }),
         {
-          'state of aggregation':
-              (Buffer buffer, dynamic m, dynamic option) {
+          'state of aggregation': (Buffer buffer, dynamic m, dynamic option) {
             return {
               'type_': 'state of aggregation subscript',
               'p1': go(m as String, 'o'),
