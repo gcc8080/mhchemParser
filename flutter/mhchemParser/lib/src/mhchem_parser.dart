@@ -98,7 +98,7 @@ abstract final class MhchemParser {
 
   /// Completely expands executable embedded `\ce` and `\pu` commands.
   ///
-  /// The ordinary [convert] and [toTex] operations remain single-pass.
+  /// The ordinary [convert] and `toTex` operations remain single-pass.
   static String expandAllTex(
     String input, {
     int maxPasses = 16,

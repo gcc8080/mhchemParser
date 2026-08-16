@@ -112,7 +112,7 @@ class MhchemParserCore {
             concatArray(output, o);
           }
           state = task.nextState ?? state;
-          if (input!.isNotEmpty) {
+          if (input.isNotEmpty) {
             if (!task.revisit) {
               input = matches.remainder;
             }
