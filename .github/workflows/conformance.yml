@@ -41,10 +41,10 @@ jobs:
         with:
           sdk: ${{ matrix.sdk }}
       - run: dart pub get
-      - run: dart format lib test
       - run: dart analyze --fatal-infos
       - run: dart test --reporter expanded
       - run: dart pub publish --dry-run
+      - run: dart format lib test
       - name: Verify committed formatting
         run: git diff --exit-code
 
